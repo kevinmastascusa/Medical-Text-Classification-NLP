@@ -2,7 +2,7 @@ import nltk
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-from transformers import BertTokenizer, BertForSequenceClassification, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BartTokenizer, BartForConditionalGeneration
 import torch
 
 # Download NLTK resources
@@ -22,6 +22,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Download and load the BERT tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+# Download and load the BART tokenizer and model for summarization
+bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+bart_model = BartForConditionalGeneration.from_pretrained('facebook/bart-base')
 
 # Define the pre-processing functions
 stop_words = set(stopwords.words('english'))
@@ -63,32 +67,33 @@ model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_l
 optimizer = AdamW(model.parameters(), lr=1e-5)
 
 # Move the model to the GPU
-model.to(device)
+if device.type == 'cuda':
+    model = model.to(device)
 
 # Create the dataloaders
+batch_size = 8  # Reduced batch size
 train_dataset = torch.utils.data.TensorDataset(
-    train_encodings['input_ids'].squeeze(),
-    train_encodings['attention_mask'].squeeze(),
+    train_encodings['input_ids'],
+    train_encodings['attention_mask'],
     train_labels
 )
 test_dataset = torch.utils.data.TensorDataset(
-    test_encodings['input_ids'].squeeze(),
-    test_encodings['attention_mask'].squeeze(),
+    test_encodings['input_ids'],
+    test_encodings['attention_mask'],
     test_labels
 )
-
-# Define the batch size
-batch_size = 16
-
-# Create the dataloaders
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+
+# Define the accumulation steps
+accumulation_steps = 4  # Number of steps to accumulate gradients before performing optimization
 
 # Training loop
 print("Training the BERT model...")
 model.train()
+total_loss = 0  # Initialize the total loss
 for epoch in range(3):
-    for batch in train_dataloader:
+    for step, batch in enumerate(train_dataloader):
         optimizer.zero_grad()
 
         # Move the input tensors to the GPU
@@ -98,11 +103,17 @@ for epoch in range(3):
 
         # Forward pass
         outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-        loss = outputs.loss
+        loss = outputs.loss / accumulation_steps  # Divide the loss by the accumulation steps
+        total_loss += loss.item()
 
-        # Backward pass and optimization
+        # Backward pass
         loss.backward()
-        optimizer.step()
+
+        # Perform optimization after accumulation steps
+        if (step + 1) % accumulation_steps == 0:
+            optimizer.step()
+            model.zero_grad()
+            total_loss = 0  # Reset the total loss
 
 # Evaluation
 print("Evaluating the BERT model...")
@@ -123,3 +134,17 @@ with torch.no_grad():
 # Print the classification report
 target_names = newsgroups_data.target_names
 print(classification_report(y_test, predictions, target_names=target_names))
+
+# Text summarization
+print("Performing text summarization...")
+documents_summarized = []
+for text in documents:
+    inputs = bart_tokenizer.encode(text, truncation=True, max_length=1024, return_tensors='pt')
+    inputs = inputs.to(device)
+    summary_ids = bart_model.generate(inputs, num_beams=4, max_length=100, early_stopping=True)
+    summary = bart_tokenizer.decode(summary_ids.squeeze(), skip_special_tokens=True)
+    documents_summarized.append(summary)
+
+# Print the summaries
+for i, summary in enumerate(documents_summarized):
+    print(f"Summary {i+1}: {summary}")

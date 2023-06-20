@@ -2,6 +2,17 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from keras import Sequential
+from keras.layers import Dense
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.model_selection import train_test_split
+
+# Load the dataset
+newsgroups = fetch_20newsgroups(subset='all')
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(newsgroups.data, newsgroups.target, test_size=0.2, random_state=42)
 
 # Define the hyperparameters to be tested
 units = [16, 32, 64, 128]
@@ -28,7 +39,6 @@ for unit in units:
             ])
             nn_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
             nn_model.fit(X_train_tfidf.toarray(), y_train, epochs=epoch, batch_size=batch_size, verbose=0)
-            nn_predictions = nn_model.predict_classes(X_test_tfidf.toarray())
 
             # Calculate the elapsed time
             elapsed_time = time.time() - start_time
