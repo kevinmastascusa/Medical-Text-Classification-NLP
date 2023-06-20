@@ -2,7 +2,7 @@ import nltk
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-from transformers import BertTokenizer, BertForSequenceClassification, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW, DistilBertTokenizer, DistilBertForSequenceClassification
 import torch
 
 # Download NLTK resources
@@ -21,18 +21,16 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Download and load the BERT tokenizer
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
 
 # Define the pre-processing functions
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
-
 def preprocess_text(text):
     tokenized_text = word_tokenize(text)
     cleaned_text = [lemmatizer.lemmatize(word) for word in tokenized_text if word not in stop_words]
     return " ".join(cleaned_text)
-
 
 # Load the dataset
 print("Loading dataset...")
@@ -57,10 +55,10 @@ train_labels = torch.tensor(y_train, dtype=torch.long)
 test_labels = torch.tensor(y_test, dtype=torch.long)
 
 # Create the BERT model
-model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=20)
+model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=20)
 
 # Set the optimizer and learning rate
-optimizer = AdamW(model.parameters(), lr=1e-5)
+optimizer = AdamW(model.parameters(), lr=2e-5)
 
 # Move the model to the GPU
 model.to(device)
@@ -78,7 +76,7 @@ test_dataset = torch.utils.data.TensorDataset(
 )
 
 # Define the batch size
-batch_size = 16
+batch_size = 32
 
 # Create the dataloaders
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
