@@ -68,4 +68,3 @@ nn_probabilities = nn_model.predict(X_test_tfidf.toarray())
 nn_predictions = (nn_probabilities > 0.5).astype(int)
 print("Neural Network classification report: ")
 print(classification_report(y_test, nn_predictions))
-

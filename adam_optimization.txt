@@ -1,0 +1,28 @@
+Adam Optimization Algorithm
+
+Adam (Adaptive Moment Estimation) is an optimization algorithm commonly used in deep learning models. It combines the advantages of two other popular optimization algorithms: AdaGrad and RMSprop.
+
+Key Features:
+- Adaptive Learning Rate: Adam adapts the learning rate for each parameter based on the estimate of the first and second moments of the gradients. It dynamically adjusts the learning rate during training, allowing it to be more effective in different parts of the model.
+- Momentum: Adam uses a momentum term, similar to how it is used in other optimization algorithms. It helps accelerate the learning process by accumulating the gradient updates from previous steps.
+- Bias Correction: Adam applies bias correction to the estimates of the first and second moments to correct any bias that may occur during the early training steps.
+- Regularization: Adam includes L2 regularization by adding a decay term to the update rule, which helps prevent overfitting.
+
+Algorithm Steps:
+1. Initialize the first and second moment estimates to zero.
+2. Compute the gradients of the parameters using backpropagation.
+3. Update the first moment estimates by taking a weighted average of the current gradients and the previous first moment estimates.
+4. Update the second moment estimates by taking a weighted average of the squared gradients and the previous second moment estimates.
+5. Apply bias correction to the first and second moment estimates.
+6. Update the parameters using the corrected first and second moment estimates, along with the learning rate and regularization.
+
+Advantages of Adam:
+- Efficient: Adam combines the benefits of adaptive learning rates, momentum, and bias correction, making it an efficient and effective optimization algorithm.
+- Suitable for Large Datasets: Adam performs well on large-scale datasets and complex models with many parameters.
+- Convergence: Adam often converges faster than other optimization algorithms, especially in scenarios with sparse gradients.
+
+Limitations of Adam:
+- Hyperparameter Sensitivity: Adam has several hyperparameters that need to be carefully tuned for optimal performance. The learning rate, beta1, beta2, and epsilon values can have a significant impact on convergence.
+- Memory Usage: Adam requires more memory compared to some other optimization algorithms due to the additional storage of first and second moment estimates.
+
+Overall, Adam is widely used in deep learning due to its ability to adaptively adjust the learning rate and handle different types of gradients. It is known for its efficiency and effectiveness, making it a popular choice for optimizing neural network models.
